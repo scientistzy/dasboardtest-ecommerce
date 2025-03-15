@@ -28,34 +28,35 @@ if order_items_df is not None and order_payments_df is not None:
     st.sidebar.header("Filter Data")
     selected_payment = st.sidebar.selectbox("Pilih Metode Pembayaran", order_payments_df["payment_type"].unique())
     
-    # Metode Pembayaran Paling Sering Digunakan
+    # Metode Pembayaran Paling Sering Digunakan (DIPENGARUHI FILTER)
     st.subheader("Metode Pembayaran Paling Sering Digunakan")
-    payment_counts = order_payments_df["payment_type"].value_counts()
+    filtered_payments = order_payments_df[order_payments_df["payment_type"] == selected_payment]
+    payment_counts = filtered_payments["payment_type"].value_counts()
     st.bar_chart(payment_counts)
     
-    # Hubungan Jumlah Produk dalam Pesanan dengan Total Pembayaran
+    # Hubungan Jumlah Produk dalam Pesanan dengan Total Pembayaran (DIPENGARUHI FILTER)
     st.subheader("Hubungan Jumlah Produk dalam Pesanan dengan Total Pembayaran")
+    
     order_items_count = order_items_df.groupby("order_id")["order_item_id"].count().reset_index()
     order_items_count.rename(columns={"order_item_id": "total_items"}, inplace=True)
     
-    payment_values = order_payments_df.groupby("order_id")["payment_value"].sum().reset_index()
+    payment_values = filtered_payments.groupby("order_id")["payment_value"].sum().reset_index()
     payment_values.rename(columns={"payment_value": "total_payment"}, inplace=True)
     
-    # Gabungkan data
+    # Gabungkan data setelah difilter
     order_payment_analysis = pd.merge(order_items_count, payment_values, on="order_id", how="inner")
     
     # Scatter Plot
     fig, ax = plt.subplots()
     sns.scatterplot(x=order_payment_analysis["total_items"], y=order_payment_analysis["total_payment"], alpha=0.5, ax=ax)
-    ax.set_title("Hubungan Jumlah Produk dalam Pesanan dengan Total Pembayaran")
+    ax.set_title(f"Hubungan Jumlah Produk dengan Total Pembayaran ({selected_payment})")
     ax.set_xlabel("Jumlah Produk")
     ax.set_ylabel("Total Pembayaran")
     st.pyplot(fig)
     
-    # Filter berdasarkan metode pembayaran
+    # Tabel Data Filtered
     st.subheader(f"Total Pembayaran Berdasarkan {selected_payment}")
-    filtered_data = order_payments_df[order_payments_df["payment_type"] == selected_payment]
-    st.write(filtered_data[["order_id", "payment_value"]].head(10))
+    st.write(filtered_payments[["order_id", "payment_value"]].head(10))
     
     st.write("Dashboard ini membantu memahami pola pembayaran dan hubungan jumlah produk dengan total pembayaran.")
 else:
